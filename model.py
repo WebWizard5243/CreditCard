@@ -147,7 +147,7 @@ class FraudClassifier:
         # ---- Cross-Validation  (stratified) --------------------------------
         logger.info("Running %d-fold stratified cross-validation …", cv_folds)
         cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
-        cv_scores = cross_val_score(self.model, X, y, cv=cv, scoring="f1", n_jobs=-1)
+        cv_scores = cross_val_score(self.model, X, y, cv=cv, scoring="f1", n_jobs=1)
         logger.info("CV F1 scores: %s  |  mean=%.4f", cv_scores, cv_scores.mean())
 
         # ---- Feature Importance -------------------------------------------

@@ -385,3 +385,4 @@ if run_pipeline:
         "Built with Streamlit, NetworkX & Scikit-learn</p>",
         unsafe_allow_html=True,
     )
+
