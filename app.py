@@ -186,7 +186,7 @@ uploaded_file = st.file_uploader(
     help="Expected columns: cc_num, merchant, category, amt, unix_time, is_fraud …",
 )
 
-use_default = st.checkbox("Use default dataset (dataset.csv in project folder)", value=True)
+use_default = st.checkbox("Use default dataset (dataset.csv in project folder)", value=False)
 
 run_pipeline = st.button("Run Full Pipeline", icon=":material/rocket_launch:", use_container_width=True)
 
