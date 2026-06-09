@@ -83,10 +83,11 @@ class FraudClassifier:
         cols_to_drop = [c for c in self._DROP_BEFORE_TRAIN if c in df.columns]
         df.drop(columns=cols_to_drop, inplace=True)
 
-        if self.TARGET not in df.columns:
-            raise ValueError(f"Target column '{self.TARGET}' not found in DataFrame.")
-
-        y = df.pop(self.TARGET)
+        if self.TARGET in df.columns:
+            y = df.pop(self.TARGET)
+        else:
+            y = None
+        
         X = df
 
         # Ensure no object columns remain (safety net)

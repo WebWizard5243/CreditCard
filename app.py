@@ -248,6 +248,11 @@ if run_pipeline:
     train_time = time.time() - t0
     progress.progress(100, text=":material/check_circle: Pipeline complete!")
 
+    st.session_state["pipeline"] = pipeline
+    st.session_state["ge"] = ge
+    st.session_state["clf"] = clf
+    st.session_state["template_row"] = raw_df.iloc[0].to_dict()
+
     st.balloons()
 
     # ===================================================================
@@ -379,10 +384,76 @@ if run_pipeline:
         )
 
     st.markdown("---")
-    st.markdown(
-        "<p style='text-align:center;font-size:0.82rem;opacity:0.7;'>"
-        "<span class=\"material-symbols-rounded\" style=\"vertical-align: middle; font-size: 1rem;\">security</span> Fraud Detection System • Graph-Augmented ML Pipeline • "
-        "Built with Streamlit, NetworkX & Scikit-learn</p>",
-        unsafe_allow_html=True,
-    )
 
+# ===================================================================
+# REAL-TIME PREDICTION INTERFACE
+# ===================================================================
+if "clf" in st.session_state:
+    st.markdown("## :material/online_prediction: Test a Transaction")
+    st.markdown("Enter transaction details below to test the trained model. Background data (like location/demographics) will be autofilled based on a template transaction.")
+
+    with st.form("prediction_form"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            test_amt = st.number_input("Transaction Amount ($)", min_value=0.0, value=50.0, step=10.0)
+            test_category = st.selectbox("Category", options=[
+                "grocery_pos", "entertainment", "shopping_net", "misc_pos", 
+                "shopping_pos", "gas_transport", "fast_food", "health_fitness", 
+                "travel", "kids_pets", "misc_net", "personal_care", "food_dining", "grocery_net"
+            ])
+        with col2:
+            test_cc_num = st.text_input("Card Number", value="1234567890123456")
+            test_merchant = st.text_input("Merchant Name", value="fraud_merchant")
+        with col3:
+            test_unix_time = st.number_input("Unix Time", min_value=0, value=int(time.time()), step=3600)
+
+        submitted = st.form_submit_button("Run Prediction", icon=":material/bolt:", use_container_width=True)
+
+    if submitted:
+        # Load components from state
+        pipeline = st.session_state["pipeline"]
+        ge = st.session_state["ge"]
+        clf = st.session_state["clf"]
+        template = st.session_state["template_row"].copy()
+
+        # Update template with user inputs
+        template["amt"] = test_amt
+        template["category"] = test_category
+        template["cc_num"] = test_cc_num
+        template["merchant"] = test_merchant
+        template["unix_time"] = test_unix_time
+
+        # Ensure no accidental target variable leakage
+        if "is_fraud" in template:
+            del template["is_fraud"]
+
+        test_df = pd.DataFrame([template])
+
+        try:
+            # 1. Preprocess (fit=False)
+            processed_test = pipeline.preprocess(test_df, fit=False)
+            
+            # 2. Graph features
+            enriched_test = ge.extract_features(processed_test)
+            
+            # 3. Predict
+            X_test, _ = clf.prepare_features(enriched_test)
+            proba = clf.predict_proba(X_test)[0]
+            
+            if proba >= 0.5:
+                st.error(f"🚨 **FRAUD DETECTED** — {proba * 100:.1f}% Probability", icon=":material/warning:")
+            else:
+                st.success(f"✅ **LEGITIMATE** — {(1 - proba) * 100:.1f}% Probability (Legit)", icon=":material/check_circle:")
+                
+            with st.expander("Show Internal Feature Matrix"):
+                st.dataframe(X_test)
+        except Exception as e:
+            st.error(f"Prediction failed: {str(e)}")
+
+st.markdown("---")
+st.markdown(
+    "<p style='text-align:center;font-size:0.82rem;opacity:0.7;'>"
+    "<span class=\"material-symbols-rounded\" style=\"vertical-align: middle; font-size: 1rem;\">security</span> Fraud Detection System • Graph-Augmented ML Pipeline • "
+    "Built with Streamlit, NetworkX & Scikit-learn</p>",
+    unsafe_allow_html=True,
+)
