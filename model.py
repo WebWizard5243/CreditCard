@@ -189,3 +189,4 @@ class FraudClassifier:
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         """Return fraud probability for each sample."""
         return self.model.predict_proba(X)[:, 1]
+

@@ -26,3 +26,10 @@ dataset.csv
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Temporary scratch and helper scripts
+scratch.py
+inspect_graph.py
+
+# Generated visualizer graphs
+network_graph.html
